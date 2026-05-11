@@ -1,0 +1,111 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Global safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Common helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Users Collection
+    match /users/{userId} {
+      function isValidUser(data) {
+        return data.uid == request.auth.uid &&
+               data.email is string &&
+               (!('displayName' in data) || data.displayName is string && data.displayName.size() <= 100) &&
+               (!('bmi' in data) || data.bmi is number) &&
+               (!('weight' in data) || data.weight is number) &&
+               (!('height' in data) || data.height is number) &&
+               (!('age' in data) || data.age is number);
+      }
+
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUser(incoming());
+      allow update: if isOwner(userId) && isValidUser(incoming()) &&
+                    incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL', 'age', 'gender', 'height', 'weight', 'bmi', 'fitnessLevel', 'goal', 'dailyCalorieGoal', 'updatedAt']);
+    }
+
+    // Meals Collection
+    match /users/{userId}/meals/{mealId} {
+      function isValidMeal(data) {
+        return data.userId == request.auth.uid &&
+               data.name is string && data.name.size() <= 100 &&
+               data.calories is number &&
+               data.date is string && data.date.matches('^\\d{4}-\\d{2}-\\d{2}$');
+      }
+
+      allow list: if isOwner(userId);
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidMeal(incoming()) && isValidId(mealId);
+      allow update: if isOwner(userId) && isValidMeal(incoming()) &&
+                    incoming().diff(existing()).affectedKeys().hasOnly(['name', 'calories', 'protein', 'carbs', 'fats', 'mealType', 'updatedAt']);
+      allow delete: if isOwner(userId);
+    }
+
+    // Workouts Collection
+    match /users/{userId}/workouts/{workoutId} {
+      function isValidWorkout(data) {
+        return data.userId == request.auth.uid &&
+               data.title is string && data.title.size() <= 100;
+      }
+
+      allow list: if isOwner(userId);
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidWorkout(incoming()) && isValidId(workoutId);
+      allow update: if isOwner(userId) && isValidWorkout(incoming()) &&
+                    incoming().diff(existing()).affectedKeys().hasOnly(['exercises', 'duration', 'completed', 'caloriesBurned', 'updatedAt']);
+      allow delete: if isOwner(userId);
+    }
+
+    // Weight History Collection
+    match /users/{userId}/weightHistory/{historyId} {
+      function isValidWeight(data) {
+        return data.userId == request.auth.uid &&
+               data.weight is number &&
+               data.date is string && data.date.matches('^\\d{4}-\\d{2}-\\d{2}$');
+      }
+
+      allow list: if isOwner(userId);
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidWeight(incoming()) && isValidId(historyId);
+      allow delete: if isOwner(userId);
+    }
+
+    // Saved Plans Collection
+    match /users/{userId}/savedPlans/{planId} {
+      function isValidPlan(data) {
+        return data.userId == request.auth.uid &&
+               data.type in ['workout', 'meal'] &&
+               data.title is string && data.title.size() <= 100;
+      }
+
+      allow list: if isOwner(userId);
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidPlan(incoming()) && isValidId(planId);
+      allow update: if isOwner(userId) && isValidPlan(incoming()) &&
+                    incoming().diff(existing()).affectedKeys().hasOnly(['title', 'content', 'updatedAt']);
+      allow delete: if isOwner(userId);
+    }
+  }
+}

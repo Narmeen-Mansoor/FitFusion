@@ -1,0 +1,109 @@
+/**
+ * Defines the structure of the FirebaseBlueprint configuration.
+ */
+{
+  "entities": {
+    "users": {
+        "title": "User Profile",
+        "description": "User profile data including fitness stats and goals",
+        "type": "object",
+        "properties": {
+            "uid": { "type": "string" },
+            "email": { "type": "string" },
+            "displayName": { "type": "string" },
+            "photoURL": { "type": "string" },
+            "age": { "type": "number" },
+            "gender": { "type": "string" },
+            "height": { "type": "number" },
+            "weight": { "type": "number" },
+            "bmi": { "type": "number" },
+            "fitnessLevel": { "type": "string" },
+            "goal": { "type": "string" },
+            "dailyCalorieGoal": { "type": "number" },
+            "createdAt": { "type": "string", "format": "date-time" },
+            "updatedAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["uid", "email"]
+    },
+    "meals": {
+        "title": "Meal Entry",
+        "description": "Daily food intake tracking",
+        "type": "object",
+        "properties": {
+            "userId": { "type": "string" },
+            "date": { "type": "string", "format": "date" },
+            "name": { "type": "string" },
+            "calories": { "type": "number" },
+            "protein": { "type": "number" },
+            "carbs": { "type": "number" },
+            "fats": { "type": "number" },
+            "mealType": { "type": "string" },
+            "timestamp": { "type": "string", "format": "date-time" }
+        },
+        "required": ["userId", "date", "name", "calories"]
+    },
+    "workouts": {
+        "title": "Workout Entry",
+        "description": "Tracked workouts and completion status",
+        "type": "object",
+        "properties": {
+            "userId": { "type": "string" },
+            "date": { "type": "string", "format": "date" },
+            "title": { "type": "string" },
+            "exercises": { "type": "array" },
+            "duration": { "type": "number" },
+            "completed": { "type": "boolean" },
+            "caloriesBurned": { "type": "number" },
+            "timestamp": { "type": "string", "format": "date-time" }
+        },
+        "required": ["userId", "date", "title"]
+    },
+    "weightHistory": {
+        "title": "Weight Record",
+        "description": "Periodic weight tracking for progress charts",
+        "type": "object",
+        "properties": {
+            "userId": { "type": "string" },
+            "date": { "type": "string", "format": "date" },
+            "weight": { "type": "number" },
+            "timestamp": { "type": "string", "format": "date-time" }
+        },
+        "required": ["userId", "date", "weight"]
+    },
+    "savedPlans": {
+        "title": "Saved AI Plan",
+        "description": "User saved AI generated workout or meal plans",
+        "type": "object",
+        "properties": {
+            "userId": { "type": "string" },
+            "type": { "type": "string", "enum": ["workout", "meal"] },
+            "title": { "type": "string" },
+            "content": { "type": "object" },
+            "createdAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["userId", "type", "title", "content"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+        "schema": "users",
+        "description": "User profile documents"
+    },
+    "/users/{userId}/meals/{mealId}": {
+        "schema": "meals",
+        "description": "User specific meal logs"
+    },
+    "/users/{userId}/workouts/{workoutId}": {
+        "schema": "workouts",
+        "description": "User specific workout logs"
+    },
+    "/users/{userId}/weightHistory/{historyId}": {
+        "schema": "weightHistory",
+        "description": "User weight tracking history"
+    },
+    "/users/{userId}/savedPlans/{planId}": {
+        "schema": "savedPlans",
+        "description": "User saved plans"
+    }
+  }
+}
